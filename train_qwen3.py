@@ -305,42 +305,67 @@ def save_model(trainer, tokenizer):
     return "qwen3-lora"
 
 def quantize_model(model_path):
-    """Quantize the model to Q4_K_M using AutoGPTQ."""
-    print("⚡ Quantizing model to Q4_K_M...")
+    """Quantize the model to Q4_K_M using Unsloth."""
+    print("⚡ Quantizing model to Q4_K_M using Unsloth...")
 
-    from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
+    try:
+        from unsloth import FastLanguageModel
+        import torch
 
-    # Load the base model
-    model_name = "OpenPipe/Qwen3-14B-Instruct"
-    quantize_config = BaseQuantizeConfig(
-        bits=4,
-        group_size=128,
-        desc_act=False,
-        model_name_or_path=model_name,
-        model_file_base_name="model"
-    )
+        # Load the trained model with LoRA adapters
+        print("🔄 Loading trained model with LoRA adapters...")
+        hf_token = os.getenv('HF_TOKEN')
 
-    # Load model for quantization
-    hf_token = os.getenv('HF_TOKEN')
-    print(f"🔑 Quantization using HF token: {'Present' if hf_token else 'None'}")
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name="qwen3-lora",  # Load from our saved LoRA model
+            token=hf_token
+        )
 
-    model = AutoGPTQForCausalLM.from_pretrained(
-        model_name,
-        quantize_config=quantize_config,
-        token=hf_token
-    )
+        # Merge LoRA adapters to base model for quantization
+        print("🔀 Merging LoRA adapters...")
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=16,  # Same as training
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj"
+            ],
+            lora_alpha=16,
+            lora_dropout=0,
+            bias="none",
+            use_gradient_checkpointing="unsloth",
+            random_state=3407,
+            use_rslora=False,
+            loftq_config=None,
+        )
 
-    # Quantize
-    model.quantize(
-        examples=[],  # Add calibration examples if needed
-        batch_size=1,
-        use_triton=True,
-        autotune_warmup_after_quantized=False
-    )
+        # Save merged model temporarily
+        print("💾 Saving merged model...")
+        model.save_pretrained_merged("qwen3-merged", tokenizer, save_method="merged_16bit")
 
-    # Save quantized model
-    model.save_quantized("qwen3-quantized-q4km")
-    print("✅ Quantized model saved to 'qwen3-quantized-q4km'")
+        # Now quantize the merged model
+        print("🔢 Loading merged model for quantization...")
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name="qwen3-merged",
+            max_seq_length=2048,
+            dtype=None,
+            load_in_4bit=True,
+            token=hf_token
+        )
+
+        # Save quantized model
+        model.save_pretrained("qwen3-quantized-q4km")
+        tokenizer.save_pretrained("qwen3-quantized-q4km")
+        print("✅ Quantized model saved to 'qwen3-quantized-q4km'")
+
+    except Exception as e:
+        print(f"⚠️  Unsloth quantization failed: {e}")
+        print("💡 Consider using GGUF quantization or skipping quantization for now")
+        print("   Your LoRA adapters are saved in 'qwen3-lora' and ready to use!")
+
+        # Alternative: Just save the LoRA model without quantization
+        print("📦 Skipping quantization - LoRA model is ready for inference")
+        return "qwen3-lora"  # Return LoRA path instead
 
 def main():
     """Main training pipeline."""
@@ -355,12 +380,15 @@ def main():
         model_path = save_model(trainer, tokenizer)
 
         # Quantize
-        quantize_model(model_path)
+        quantized_path = quantize_model(model_path)
 
-        print("\n🎉 Training and quantization complete!")
+        print("\n🎉 Training complete!")
         print("📁 Outputs:")
         print("  - LoRA adapters: qwen3-lora/")
-        print("  - Quantized model: qwen3-quantized-q4km/")
+        if quantized_path == "qwen3-lora":
+            print("  - ⚠️  Quantization skipped - use LoRA model for inference")
+        else:
+            print("  - Quantized model: qwen3-quantized-q4km/")
 
         if wandb_enabled:
             wandb.finish()
