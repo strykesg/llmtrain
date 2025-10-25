@@ -20,6 +20,9 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
+# Global WandB state
+wandb_enabled = False
+
 def setup_environment():
     """Setup training environment and validate requirements."""
     print("🚀 Setting up training environment...")
@@ -86,7 +89,19 @@ def setup_model():
     )
 
     # Setup chat template
-    tokenizer = get_chat_template(tokenizer, chat_template="qwen-2.5")
+    try:
+        tokenizer = get_chat_template(tokenizer, chat_template="qwen-2.5")
+        print("✅ Chat template loaded: qwen-2.5")
+    except Exception as e:
+        print(f"⚠️  Chat template loading failed: {e}")
+        print("   Using default chat template")
+        # Fallback to basic chat template
+        try:
+            tokenizer = get_chat_template(tokenizer, chat_template="chatml")
+            print("✅ Fallback chat template loaded: chatml")
+        except:
+            print("⚠️  Fallback chat template also failed")
+            # Continue without chat template - will use basic formatting
 
     # Add LoRA adapters for efficient fine-tuning
     model = FastLanguageModel.get_peft_model(
@@ -148,6 +163,7 @@ def train_model(model, tokenizer, dataset):
     )
 
     # Initialize WandB with error handling
+    global wandb_enabled
     wandb_enabled = False
     if os.getenv('WANDB_API_KEY'):
         try:
@@ -187,16 +203,35 @@ def train_model(model, tokenizer, dataset):
         args=training_args,
 
         # Formatting function for chat templates
-        formatting_func=lambda examples: {
-            "text": [
-                tokenizer.apply_chat_template(
-                    conversation=messages,
-                    tokenize=False,
-                    add_generation_prompt=False
-                )
-                for messages in examples["messages"]
-            ]
-        },
+        def format_conversation(examples):
+            formatted_texts = []
+            for messages in examples["messages"]:
+                try:
+                    # Try using chat template
+                    formatted_text = tokenizer.apply_chat_template(
+                        conversation=messages,
+                        tokenize=False,
+                        add_generation_prompt=False
+                    )
+                except Exception as e:
+                    print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
+                    # Fallback to manual formatting
+                    formatted_parts = []
+                    for msg in messages:
+                        role = msg.get("role", "user")
+                        content = msg.get("content", "")
+                        if role == "system":
+                            formatted_parts.append(f"System: {content}")
+                        elif role == "user":
+                            formatted_parts.append(f"Human: {content}")
+                        elif role == "assistant":
+                            formatted_parts.append(f"Assistant: {content}")
+                    formatted_text = "\n\n".join(formatted_parts)
+
+                formatted_texts.append(formatted_text)
+            return {"text": formatted_texts}
+
+        formatting_func=format_conversation,
     )
 
     # Monitor GPU usage

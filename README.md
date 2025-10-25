@@ -101,6 +101,9 @@ python3 test_training_args.py
 
 # Test WandB configuration
 python3 test_wandb.py
+
+# Test chat formatting
+python3 test_formatting.py
 ```
 
 ## 📈 Monitoring & Logging
