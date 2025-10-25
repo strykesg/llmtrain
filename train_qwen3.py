@@ -218,14 +218,13 @@ def train_model(model, tokenizer, dataset):
                     formatted_parts.append(f"Assistant: {content}")
             formatted_text = "\n\n".join(formatted_parts)
 
-        return {"text": formatted_text}
+        return formatted_text
 
     # Setup trainer
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
-        dataset_text_field="text",  # Will be created by formatting function
         max_seq_length=2048,
         dataset_num_proc=2,
         packing=False,  # Can set to True for better efficiency
