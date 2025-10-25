@@ -75,6 +75,12 @@ python3 quantize_model.py  # Quantizes to Q4_K_M
 
 ### Standalone Commands
 ```bash
+# Complete setup (dependencies + API keys)
+./setup.sh
+
+# Fix setup issues (if setup.sh fails)
+./fix_setup.sh
+
 # Setup environment only
 python3 setup_env.py
 
@@ -83,6 +89,9 @@ python3 train_qwen3.py
 
 # Quantization only
 python3 quantize_model.py --model_path qwen3-lora --output_path qwen3-q4km
+
+# Test models
+python3 test_inference.py
 ```
 
 ## 📈 Monitoring & Logging

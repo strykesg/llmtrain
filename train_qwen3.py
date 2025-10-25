@@ -56,22 +56,14 @@ def setup_environment():
         print("⚠️  HuggingFace token not found - may have download limits")
 
 def load_training_data():
-    """Load and combine training datasets."""
+    """Load training datasets."""
     print("📚 Loading training data...")
 
-    # Load primary data (our custom dataset)
+    # Load only primary data (our custom dataset)
     primary_data = load_dataset("json", data_files="training_data.jsonl", split="train")
-    print(f"📊 Primary data: {len(primary_data)} examples")
+    print(f"📊 Training data: {len(primary_data)} examples")
 
-    # Load secondary data (market news data)
-    secondary_data = load_dataset("json", data_files="secondary_data.jsonl", split="train")
-    print(f"📊 Secondary data: {len(secondary_data)} examples")
-
-    # Combine datasets
-    combined_data = concatenate_datasets([primary_data, secondary_data])
-    print(f"📊 Combined data: {len(combined_data)} examples")
-
-    return combined_data
+    return primary_data
 
 def setup_model():
     """Setup Qwen3 model with Unsloth for efficient training."""
@@ -126,7 +118,8 @@ def train_model(model, tokenizer, dataset):
         per_device_train_batch_size=2,  # Adjust based on GPU memory
         gradient_accumulation_steps=4,  # Effective batch size = 8
         warmup_steps=5,
-        max_steps=200,  # Adjust based on dataset size and desired training
+        num_train_epochs=3,  # Train for 3 full epochs
+        # max_steps=200,  # Removed - using epochs instead
         learning_rate=2e-4,
         fp16=not is_bfloat16_supported(),
         bf16=is_bfloat16_supported(),
@@ -161,7 +154,8 @@ def train_model(model, tokenizer, dataset):
                 "batch_size": training_args.per_device_train_batch_size,
                 "gradient_accumulation": training_args.gradient_accumulation_steps,
                 "learning_rate": training_args.learning_rate,
-                "max_steps": training_args.max_steps,
+                "num_train_epochs": training_args.num_train_epochs,
+                "effective_batch_size": training_args.per_device_train_batch_size * training_args.gradient_accumulation_steps,
             }
         )
 

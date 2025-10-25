@@ -40,7 +40,7 @@ fi
 echo "📚 Installing core dependencies..."
 
 # Stage 1: Basic packages
-pip install python-dotenv tqdm psutil jupyter ipykernel
+pip install python-dotenv tqdm psutil GPUtil jupyter ipykernel
 
 # Stage 2: ML core packages
 echo "🤖 Installing ML core packages..."
