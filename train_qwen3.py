@@ -193,10 +193,7 @@ def train_model(model, tokenizer, dataset):
 
     # Formatting function for chat templates
     def format_conversation(examples):
-        # examples["messages"] can be either:
-        # 1. A list of message dicts (single conversation)
-        # 2. A list of lists of message dicts (batched conversations)
-
+        # Unsloth expects a list of processed strings directly
         messages_list = examples["messages"]
 
         # Check if this is batched (list of lists) or single (list of dicts)
@@ -227,7 +224,7 @@ def train_model(model, tokenizer, dataset):
                     formatted_text = "\n\n".join(formatted_parts)
 
                 formatted_texts.append(formatted_text)
-            return {"text": formatted_texts}
+            return formatted_texts  # Return list directly for Unsloth
         else:
             # Single conversation: messages_list is a list of message dicts
             messages = messages_list
@@ -253,14 +250,13 @@ def train_model(model, tokenizer, dataset):
                         formatted_parts.append(f"Assistant: {content}")
                 formatted_text = "\n\n".join(formatted_parts)
 
-            return {"text": formatted_text}
+            return [formatted_text]  # Return as list for consistency
 
     # Setup trainer
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
-        dataset_text_field="text",
         max_seq_length=2048,
         dataset_num_proc=2,
         packing=False,  # Can set to True for better efficiency
