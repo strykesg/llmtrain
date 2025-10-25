@@ -1,0 +1,47 @@
+# Environment files
+.env
+.env.local
+
+# Virtual environment
+venv/
+env/
+
+# Model outputs and checkpoints
+outputs/
+qwen3-lora/
+qwen3-q4km/
+qwen3-quantized-*/
+checkpoints/
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+wandb/
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
