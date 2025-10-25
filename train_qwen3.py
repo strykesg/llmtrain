@@ -191,6 +191,35 @@ def train_model(model, tokenizer, dataset):
     else:
         print("ℹ️  WandB API key not found - logging disabled")
 
+    # Formatting function for chat templates
+    def format_conversation(examples):
+        formatted_texts = []
+        for messages in examples["messages"]:
+            try:
+                # Try using chat template
+                formatted_text = tokenizer.apply_chat_template(
+                    conversation=messages,
+                    tokenize=False,
+                    add_generation_prompt=False
+                )
+            except Exception as e:
+                print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
+                # Fallback to manual formatting
+                formatted_parts = []
+                for msg in messages:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role == "system":
+                        formatted_parts.append(f"System: {content}")
+                    elif role == "user":
+                        formatted_parts.append(f"Human: {content}")
+                    elif role == "assistant":
+                        formatted_parts.append(f"Assistant: {content}")
+                formatted_text = "\n\n".join(formatted_parts)
+
+            formatted_texts.append(formatted_text)
+        return {"text": formatted_texts}
+
     # Setup trainer
     trainer = SFTTrainer(
         model=model,
@@ -201,36 +230,6 @@ def train_model(model, tokenizer, dataset):
         dataset_num_proc=2,
         packing=False,  # Can set to True for better efficiency
         args=training_args,
-
-        # Formatting function for chat templates
-        def format_conversation(examples):
-            formatted_texts = []
-            for messages in examples["messages"]:
-                try:
-                    # Try using chat template
-                    formatted_text = tokenizer.apply_chat_template(
-                        conversation=messages,
-                        tokenize=False,
-                        add_generation_prompt=False
-                    )
-                except Exception as e:
-                    print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
-                    # Fallback to manual formatting
-                    formatted_parts = []
-                    for msg in messages:
-                        role = msg.get("role", "user")
-                        content = msg.get("content", "")
-                        if role == "system":
-                            formatted_parts.append(f"System: {content}")
-                        elif role == "user":
-                            formatted_parts.append(f"Human: {content}")
-                        elif role == "assistant":
-                            formatted_parts.append(f"Assistant: {content}")
-                    formatted_text = "\n\n".join(formatted_parts)
-
-                formatted_texts.append(formatted_text)
-            return {"text": formatted_texts}
-
         formatting_func=format_conversation,
     )
 
