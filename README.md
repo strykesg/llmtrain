@@ -104,6 +104,9 @@ python3 test_wandb.py
 
 # Test chat formatting
 python3 test_formatting.py
+
+# Check Python syntax
+python3 check_syntax.py
 ```
 
 ## 📈 Monitoring & Logging
