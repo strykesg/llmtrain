@@ -139,8 +139,11 @@ def benchmark_gguf(llm):
     avg_tokens = total_tokens / len(test_prompts)
     tokens_per_sec = avg_tokens / avg_time
 
-    print("
-📊 Benchmark Results:"    print(".2f"    print(".2f"    print(".1f"    print(".1f"def main():
+    print(f"\n📊 Benchmark Results:")
+    print(f"  • Average response time: {avg_time:.2f} seconds")
+    print(f"  • Average tokens generated: {avg_tokens:.0f}")
+    print(f"  • Token generation speed: {tokens_per_sec:.1f} tokens/second")
+    print(f"  • Model size: {os.path.getsize('qwen3-gguf-q4km.gguf') / (1024**3):.1f} GB")def main():
     """Main function."""
     import sys
 
