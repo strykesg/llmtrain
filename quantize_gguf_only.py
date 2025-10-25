@@ -26,7 +26,7 @@ def quantize_gguf():
 
     print(f"📊 Current size: {size_gb:.1f}GB (f16 format)")    # Find quantize tool
     quantize_paths = [
-        "./llama.cpp/build/bin/quantize",
+        "./llama.cpp/build/bin/quantize",  # This is the correct CMake build path
         "./llama.cpp/build/quantize",
         "./llama.cpp/quantize",
         "/usr/local/bin/quantize",
