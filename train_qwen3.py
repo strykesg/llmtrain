@@ -193,38 +193,74 @@ def train_model(model, tokenizer, dataset):
 
     # Formatting function for chat templates
     def format_conversation(examples):
-        # examples["messages"] is a list of message dicts for a single conversation
-        messages = examples["messages"]
+        # examples["messages"] can be either:
+        # 1. A list of message dicts (single conversation)
+        # 2. A list of lists of message dicts (batched conversations)
 
-        try:
-            # Try using chat template
-            formatted_text = tokenizer.apply_chat_template(
-                conversation=messages,
-                tokenize=False,
-                add_generation_prompt=False
-            )
-        except Exception as e:
-            print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
-            # Fallback to manual formatting
-            formatted_parts = []
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-                if role == "system":
-                    formatted_parts.append(f"System: {content}")
-                elif role == "user":
-                    formatted_parts.append(f"Human: {content}")
-                elif role == "assistant":
-                    formatted_parts.append(f"Assistant: {content}")
-            formatted_text = "\n\n".join(formatted_parts)
+        messages_list = examples["messages"]
 
-        return formatted_text
+        # Check if this is batched (list of lists) or single (list of dicts)
+        if isinstance(messages_list[0], list):
+            # Batched: messages_list is a list of conversations
+            formatted_texts = []
+            for messages in messages_list:
+                try:
+                    # Try using chat template
+                    formatted_text = tokenizer.apply_chat_template(
+                        conversation=messages,
+                        tokenize=False,
+                        add_generation_prompt=False
+                    )
+                except Exception as e:
+                    print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
+                    # Fallback to manual formatting
+                    formatted_parts = []
+                    for msg in messages:
+                        role = msg.get("role", "user")
+                        content = msg.get("content", "")
+                        if role == "system":
+                            formatted_parts.append(f"System: {content}")
+                        elif role == "user":
+                            formatted_parts.append(f"Human: {content}")
+                        elif role == "assistant":
+                            formatted_parts.append(f"Assistant: {content}")
+                    formatted_text = "\n\n".join(formatted_parts)
+
+                formatted_texts.append(formatted_text)
+            return {"text": formatted_texts}
+        else:
+            # Single conversation: messages_list is a list of message dicts
+            messages = messages_list
+            try:
+                # Try using chat template
+                formatted_text = tokenizer.apply_chat_template(
+                    conversation=messages,
+                    tokenize=False,
+                    add_generation_prompt=False
+                )
+            except Exception as e:
+                print(f"⚠️  Chat template failed for message, using manual formatting: {e}")
+                # Fallback to manual formatting
+                formatted_parts = []
+                for msg in messages:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role == "system":
+                        formatted_parts.append(f"System: {content}")
+                    elif role == "user":
+                        formatted_parts.append(f"Human: {content}")
+                    elif role == "assistant":
+                        formatted_parts.append(f"Assistant: {content}")
+                formatted_text = "\n\n".join(formatted_parts)
+
+            return {"text": formatted_text}
 
     # Setup trainer
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
+        dataset_text_field="text",
         max_seq_length=2048,
         dataset_num_proc=2,
         packing=False,  # Can set to True for better efficiency
