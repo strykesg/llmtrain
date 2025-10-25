@@ -28,7 +28,7 @@ def load_gguf_model():
         llm = Llama(
             model_path=gguf_path,
             n_ctx=2048,              # Context window
-            n_threads=-1,            # Use all CPU cores
+            n_threads=16,            # Use 16 CPU threads
             n_batch=512,             # Batch size for processing
             n_gpu_layers=0,          # 0 = CPU only (no GPU)
             verbose=False,           # Reduce output
