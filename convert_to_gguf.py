@@ -39,6 +39,50 @@ def check_requirements():
     print("  bash setup_gguf.sh")
     return False
 
+def merge_lora_for_gguf():
+    """Merge LoRA weights back to full-precision model for GGUF conversion."""
+    print("🔀 Merging LoRA weights for GGUF compatibility...")
+
+    try:
+        from unsloth import FastLanguageModel
+        import torch
+
+        # Load base model and LoRA
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name="OpenPipe/Qwen3-14B-Instruct",
+            max_seq_length=2048,
+            load_in_4bit=False,  # Load in full precision for merging
+            token=os.getenv('HF_TOKEN')
+        )
+
+        # Apply LoRA adapters
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=16,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            lora_alpha=16,
+            lora_dropout=0,
+            bias="none",
+            use_gradient_checkpointing="unsloth",
+            random_state=3407,
+            use_rslora=False,
+            loftq_config=None,
+        )
+
+        # Load the trained LoRA weights
+        model.load_adapter("qwen3-lora", "default")
+
+        # Merge and save in full precision
+        print("💾 Saving merged full-precision model...")
+        model.save_pretrained_merged("qwen3-merged", tokenizer, save_method="merged_16bit")
+
+        print("✅ LoRA merging completed!")
+        return True
+
+    except Exception as e:
+        print(f"❌ LoRA merging failed: {e}")
+        return False
+
 def convert_to_gguf(model_path, output_path):
     """Convert model to GGUF format."""
     print(f"🔄 Converting {model_path} to GGUF...")
@@ -179,18 +223,31 @@ def main():
     print("🦙 Converting Qwen3 to GGUF format")
     print("=" * 40)
 
-    # Determine input model
+    # Determine input model - prefer merged model for GGUF conversion
+    merged_path = "qwen3-merged"
     lora_path = "qwen3-lora"
     quantized_path = "qwen3-quantized-q4km"
 
-    if os.path.exists(quantized_path):
-        input_model = quantized_path
-        print(f"📂 Using quantized model: {input_model}")
+    if os.path.exists(merged_path):
+        input_model = merged_path
+        print(f"📂 Using merged model: {input_model}")
     elif os.path.exists(lora_path):
-        input_model = lora_path
-        print(f"📂 Using LoRA model: {input_model}")
+        # Need to merge LoRA first for GGUF conversion
+        print("🔄 LoRA model found - merging for GGUF conversion...")
+        if merge_lora_for_gguf():
+            input_model = "qwen3-merged"
+            print(f"📂 Using newly merged model: {input_model}")
+        else:
+            print("❌ LoRA merging failed!")
+            return
+    elif os.path.exists(quantized_path):
+        print("⚠️  Quantized model found but not compatible with GGUF (bitsandbytes)")
+        print("💡 Need LoRA model for GGUF conversion")
+        print("💡 Run training again or use the existing LoRA model")
+        return
     else:
-        print("❌ No model found! Run training first.")
+        print("❌ No compatible model found! Run training first.")
+        print("💡 GGUF conversion needs LoRA model (qwen3-lora/)")
         return
 
     # Output path
