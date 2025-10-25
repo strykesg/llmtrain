@@ -92,6 +92,12 @@ python3 quantize_model.py --model_path qwen3-lora --output_path qwen3-q4km
 
 # Test models
 python3 test_inference.py
+
+# Test environment setup
+python3 test_env.py
+
+# Test training components
+python3 test_training_args.py
 ```
 
 ## 📈 Monitoring & Logging
@@ -269,7 +275,7 @@ Training data uses OpenAI Chat Completion format:
 ## 📊 Expected Performance
 
 ### Training Time (H100)
-- **50K examples**: ~4-6 hours
+- **5K examples, 2 epochs**: ~2-3 hours
 - **Throughput**: ~100-150 tokens/second
 - **Memory usage**: 60-70GB peak
 

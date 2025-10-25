@@ -123,7 +123,7 @@ def train_model(model, tokenizer, dataset):
         per_device_train_batch_size=2,  # Adjust based on GPU memory
         gradient_accumulation_steps=4,  # Effective batch size = 8
         warmup_steps=5,
-        num_train_epochs=3,  # Train for 3 full epochs
+        num_train_epochs=2,  # Train for 2 full epochs
         # max_steps=200,  # Removed - using epochs instead
         learning_rate=2e-4,
         fp16=not is_bfloat16_supported(),
@@ -144,7 +144,6 @@ def train_model(model, tokenizer, dataset):
         # Monitoring
         save_steps=50,
         save_total_limit=2,
-        evaluation_strategy="no",
         load_best_model_at_end=False,
     )
 
