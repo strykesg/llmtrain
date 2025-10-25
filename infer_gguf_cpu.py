@@ -145,8 +145,8 @@ def benchmark_gguf(llm):
     print(f"  • Average tokens generated: {avg_tokens:.0f}")
     print(f"  • Token generation speed: {tokens_per_sec:.1f} tokens/second")
     print(f"  • Model size: {os.path.getsize('qwen3-gguf-q4km.gguf') / (1024**3):.1f} GB")
-    
-    def main():
+
+def main():
     """Main function."""
     import sys
 
