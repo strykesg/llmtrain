@@ -1,5 +1,7 @@
+# PyTorch is installed separately in setup.sh due to CUDA requirements
+# torch>=2.0.0
+
 # Core ML libraries
-torch>=2.0.0
 transformers>=4.40.0
 datasets>=2.18.0
 accelerate>=0.28.0
@@ -31,7 +33,9 @@ psutil>=5.9.0
 
 # Optional: for advanced features
 deepspeed>=0.14.0
-flash-attn>=2.5.0
+
+# Optional: Flash Attention (may not install on all systems)
+# flash-attn>=2.5.0
 
 # Development
 jupyter>=1.0.0

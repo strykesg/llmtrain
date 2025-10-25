@@ -22,6 +22,12 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
+### 1b. If Setup Fails
+```bash
+# Run the fix script for common installation issues
+./fix_setup.sh
+```
+
 The setup script will:
 - ✅ Create Python virtual environment
 - ✅ Install all dependencies with CUDA support
@@ -127,7 +133,39 @@ Edit `train_qwen3.py` to modify:
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### Setup Issues
+
+**Flash Attention Installation Fails**
+```bash
+# Run the fix script
+./fix_setup.sh
+
+# Or try manual installation
+source venv/bin/activate
+pip install flash-attn --no-build-isolation
+```
+
+**PyTorch CUDA Version Mismatch**
+```bash
+# Check your CUDA version
+nvidia-smi
+
+# Install matching PyTorch version
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  # For CUDA 11.8
+```
+
+**Virtual Environment Issues**
+```bash
+# Recreate virtual environment
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+./setup.sh
+```
+
+### Training Issues
 
 **CUDA Out of Memory**
 ```bash
@@ -146,6 +184,35 @@ python3 setup_env.py
 ```bash
 # Check token permissions at https://huggingface.co/settings/tokens
 # Ensure model access is granted
+```
+
+**Model Loading Issues**
+```bash
+# Clear HuggingFace cache
+rm -rf ~/.cache/huggingface/
+
+# Check disk space
+df -h
+```
+
+### Performance Issues
+
+**Slow Training**
+```bash
+# Ensure CUDA is being used
+python3 -c "import torch; print(torch.cuda.is_available())"
+
+# Check GPU utilization
+watch -n 1 nvidia-smi
+```
+
+**Out of Disk Space**
+```bash
+# Monitor disk usage
+du -sh outputs/
+
+# Clean old checkpoints
+ls outputs/checkpoints/ | head -n -3 | xargs rm -rf
 ```
 
 ### Performance Tuning
