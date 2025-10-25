@@ -106,11 +106,22 @@ def convert_to_gguf(model_path, output_path):
                 print("✅ GGUF conversion successful!")
 
                 # Now quantize to Q4_K_M using llama.cpp quantize tool
-                quantize_path = "./llama.cpp/build/bin/quantize"  # CMake build location
-                if not os.path.exists(quantize_path):
-                    quantize_path = "./llama.cpp/quantize"  # Fallback
+                # Check multiple possible quantize tool locations
+                quantize_paths = [
+                    "./llama.cpp/build/bin/quantize",      # CMake build
+                    "./llama.cpp/build/quantize",           # Alternative CMake
+                    "./llama.cpp/quantize",                 # Direct build
+                    "/usr/local/bin/quantize",              # System install
+                ]
 
-                if os.path.exists(quantize_path):
+                quantize_path = None
+                for path in quantize_paths:
+                    if os.path.exists(path):
+                        quantize_path = path
+                        print(f"✅ Found quantize tool: {path}")
+                        break
+
+                if quantize_path:
                     quantized_output = output_path.replace(".gguf", "-Q4_K_M.gguf")
                     quantize_cmd = [
                         quantize_path,
@@ -132,9 +143,20 @@ def convert_to_gguf(model_path, output_path):
                         return True  # Still return True since conversion worked
                 else:
                     print("⚠️  Conversion successful but quantize tool not found")
-                    print("💡 You can quantize later with:")
-                    print("   ./llama.cpp/build/bin/quantize qwen3-gguf-q4km.gguf qwen3-gguf-q4km-Q4_K_M.gguf Q4_K_M")
-                    print("   mv qwen3-gguf-q4km-Q4_K_M.gguf qwen3-gguf-q4km.gguf")
+                    print("\n🔧 To build the quantize tool:"                    print("  cd llama.cpp")
+                    print("  # If using CMake (recommended):")
+                    print("  mkdir build && cd build")
+                    print("  cmake .. -DLLAMA_CURL=ON")
+                    print("  make -j$(nproc)")
+                    print("  # quantize will be in: build/bin/quantize")
+                    print()
+                    print("  # Then quantize manually:")
+                    print("  ./build/bin/quantize ../qwen3-gguf-q4km.gguf ../qwen3-gguf-q4km-Q4_K_M.gguf Q4_K_M")
+                    print("  mv qwen3-gguf-q4km-Q4_K_M.gguf qwen3-gguf-q4km.gguf")
+                    print()
+                    print("📄 Your GGUF model is still usable (just larger)")
+                    print("   File: qwen3-gguf-q4km.gguf")
+                    print("   Size: ~14GB (f16), can be quantized later")
                     return True
             else:
                 print(f"❌ Conversion failed: {result.stderr}")
