@@ -97,7 +97,7 @@ def convert_to_gguf(model_path, output_path):
         print("Loading model...")
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=torch.float16,
+            dtype=torch.float16,  # Fixed: use dtype instead of deprecated torch_dtype
             device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
