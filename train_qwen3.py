@@ -245,10 +245,13 @@ def quantize_model(model_path):
     )
 
     # Load model for quantization
+    hf_token = os.getenv('HF_TOKEN')
+    print(f"🔑 Quantization using HF token: {'Present' if hf_token else 'None'}")
+
     model = AutoGPTQForCausalLM.from_pretrained(
         model_name,
         quantize_config=quantize_config,
-        token=os.getenv('HF_TOKEN')
+        token=hf_token
     )
 
     # Quantize
