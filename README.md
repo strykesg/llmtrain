@@ -194,7 +194,10 @@ gradient_accumulation_steps=8
 
 **WandB Login Issues**
 ```bash
-# Re-run setup
+# Test WandB configuration
+python3 test_wandb.py
+
+# Re-run setup if needed
 python3 setup_env.py
 ```
 
@@ -202,6 +205,19 @@ python3 setup_env.py
 ```bash
 # Check token permissions at https://huggingface.co/settings/tokens
 # Ensure model access is granted
+```
+
+**WandB Permission Errors**
+```bash
+# Test WandB access
+python3 test_wandb.py
+
+# Update .env with correct project/entity
+# WANDB_PROJECT=your-project-name
+# WANDB_ENTITY=your-username
+
+# Or disable WandB temporarily
+# Remove WANDB_API_KEY from .env
 ```
 
 **Model Loading Issues**
