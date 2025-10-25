@@ -94,7 +94,8 @@ You provide comprehensive, deeply analytical responses that synthesize technical
             response = output["choices"][0]["text"].strip()
 
             print(f"\r🤖 Qwen3: {response}")
-            print(".2f"        except Exception as e:
+            print(f"⏱️  Response time: {response_time:.2f} seconds")
+        except Exception as e:
             print(f"\r❌ Error: {e}")
 
 def benchmark_gguf(llm):
