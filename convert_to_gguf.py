@@ -50,8 +50,9 @@ def convert_to_gguf(model_path, output_path):
             # Use llama.cpp convert script with correct arguments
             cmd = [
                 sys.executable, convert_tool,
-                model_path,  # Input model path
-                output_path   # Output GGUF path
+                "--outfile", output_path,  # Output file flag
+                "--outtype", "f16",        # Convert to f16 first
+                model_path                 # Input model path
             ]
 
             print(f"Running: {' '.join(cmd)}")
@@ -87,7 +88,9 @@ def convert_to_gguf(model_path, output_path):
                         return True  # Still return True since conversion worked
                 else:
                     print("⚠️  Conversion successful but quantize tool not found")
-                    print("💡 You can quantize later with: ./llama.cpp/build/bin/quantize")
+                    print("💡 You can quantize later with:")
+                    print("   ./llama.cpp/build/bin/quantize qwen3-gguf-q4km.gguf qwen3-gguf-q4km-Q4_K_M.gguf Q4_K_M")
+                    print("   mv qwen3-gguf-q4km-Q4_K_M.gguf qwen3-gguf-q4km.gguf")
                     return True
             else:
                 print(f"❌ Conversion failed: {result.stderr}")
