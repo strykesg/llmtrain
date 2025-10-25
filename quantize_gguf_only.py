@@ -20,10 +20,11 @@ def quantize_gguf():
     # Check file size to see if already quantized
     size_gb = os.path.getsize(gguf_path) / (1024**3)
     if size_gb < 10:  # Likely already quantized
-        print(".1f"        print("✅ Model appears to already be quantized!")
+        print(f"📊 Current size: {size_gb:.1f}GB")
+        print("✅ Model appears to already be quantized!")
         return True
 
-    print(".1f"    # Find quantize tool
+    print(f"📊 Current size: {size_gb:.1f}GB (f16 format)")    # Find quantize tool
     quantize_paths = [
         "./llama.cpp/build/bin/quantize",
         "./llama.cpp/build/quantize",
@@ -66,7 +67,7 @@ def quantize_gguf():
 
         new_size_gb = os.path.getsize(gguf_path) / (1024**3)
         print("✅ Quantization successful!")
-        print(".1f"
+        print(f"📊 New size: {new_size_gb:.1f}GB (Q4_K_M quantized)")
         return True
     else:
         print(f"❌ Quantization failed: {result.stderr}")
