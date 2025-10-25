@@ -98,6 +98,9 @@ python3 test_env.py
 
 # Test training components
 python3 test_training_args.py
+
+# Test WandB configuration
+python3 test_wandb.py
 ```
 
 ## 📈 Monitoring & Logging

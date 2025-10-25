@@ -147,21 +147,33 @@ def train_model(model, tokenizer, dataset):
         load_best_model_at_end=False,
     )
 
-    # Initialize WandB
+    # Initialize WandB with error handling
+    wandb_enabled = False
     if os.getenv('WANDB_API_KEY'):
-        wandb.init(
-            project=wandb_project,
-            entity=wandb_entity,
-            config={
-                "model": "OpenPipe/Qwen3-14B-Instruct",
-                "dataset_size": len(dataset),
-                "batch_size": training_args.per_device_train_batch_size,
-                "gradient_accumulation": training_args.gradient_accumulation_steps,
-                "learning_rate": training_args.learning_rate,
-                "num_train_epochs": training_args.num_train_epochs,
-                "effective_batch_size": training_args.per_device_train_batch_size * training_args.gradient_accumulation_steps,
-            }
-        )
+        try:
+            print(f"📊 Initializing WandB (project: {wandb_project}, entity: {wandb_entity})...")
+            wandb.init(
+                project=wandb_project,
+                entity=wandb_entity,
+                config={
+                    "model": "OpenPipe/Qwen3-14B-Instruct",
+                    "dataset_size": len(dataset),
+                    "batch_size": training_args.per_device_train_batch_size,
+                    "gradient_accumulation": training_args.gradient_accumulation_steps,
+                    "learning_rate": training_args.learning_rate,
+                    "num_train_epochs": training_args.num_train_epochs,
+                    "effective_batch_size": training_args.per_device_train_batch_size * training_args.gradient_accumulation_steps,
+                }
+            )
+            wandb_enabled = True
+            print("✅ WandB initialized successfully")
+        except Exception as e:
+            print(f"⚠️  WandB initialization failed: {e}")
+            print("   Continuing without WandB logging...")
+            print("   💡 Check your WANDB_API_KEY and project permissions")
+            training_args.report_to = "none"  # Disable WandB reporting
+    else:
+        print("ℹ️  WandB API key not found - logging disabled")
 
     # Setup trainer
     trainer = SFTTrainer(
@@ -194,7 +206,7 @@ def train_model(model, tokenizer, dataset):
         memory_total = gpu.memoryTotal
         memory_percent = (memory_used / memory_total) * 100
 
-        if os.getenv('WANDB_API_KEY'):
+        if wandb_enabled:
             wandb.log({
                 "gpu_memory_used_mb": memory_used,
                 "gpu_memory_percent": memory_percent,
@@ -285,12 +297,12 @@ def main():
         print("  - LoRA adapters: qwen3-lora/")
         print("  - Quantized model: qwen3-quantized-q4km/")
 
-        if os.getenv('WANDB_API_KEY'):
+        if wandb_enabled:
             wandb.finish()
 
     except Exception as e:
         print(f"❌ Error during training: {e}")
-        if os.getenv('WANDB_API_KEY'):
+        if wandb_enabled:
             wandb.finish()
         raise
 
