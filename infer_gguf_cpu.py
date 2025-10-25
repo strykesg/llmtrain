@@ -132,7 +132,7 @@ def benchmark_gguf(llm):
         tokens_generated = len(llm.tokenize(response.encode()))
         time_taken = end_time - start_time
 
-        print(".2f"
+        print(f"   Response: {time_taken:.2f}s, {tokens_generated} tokens")
         total_time += time_taken
         total_tokens += tokens_generated
 
