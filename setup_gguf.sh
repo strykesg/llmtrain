@@ -16,9 +16,9 @@ if [ "$PWD" != "/workspace/llmtrain" ]; then
     fi
 fi
 
-# Install llama-cpp-python with convert functionality
-echo "📦 Installing llama-cpp-python[convert]..."
-pip install llama-cpp-python[convert]
+# Install llama-cpp-python (convert functionality is built-in now)
+echo "📦 Installing llama-cpp-python..."
+pip install llama-cpp-python
 
 if [ $? -eq 0 ]; then
     echo "✅ llama-cpp-python installed successfully"
@@ -28,14 +28,23 @@ else
     exit 1
 fi
 
-# Optional: Install llama.cpp from source (more reliable conversion)
+# Install additional conversion tools
+echo "📦 Installing huggingface_hub for model conversion..."
+pip install huggingface_hub
+
+# Optional: Install llama.cpp from source using CMake
 echo
 echo "🔧 Installing llama.cpp from source (recommended)..."
 if [ ! -d "llama.cpp" ]; then
     git clone https://github.com/ggerganov/llama.cpp
     cd llama.cpp
-    make
-    cd ..
+
+    # Use CMake instead of make (new build system)
+    mkdir build && cd build
+    cmake .. -DLLAMA_CURL=ON
+    make -j$(nproc)
+    cd ../..
+
 else
     echo "llama.cpp directory already exists, skipping clone"
 fi

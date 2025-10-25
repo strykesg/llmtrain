@@ -20,31 +20,23 @@ def check_requirements():
         print("❌ transformers not installed. Run: pip install transformers")
         return False
 
-    # Check for llama.cpp convert script
-    convert_script = "/usr/local/bin/convert_hf_to_gguf.py"
+    # Check for llama.cpp convert script (new location)
+    convert_script = "./llama.cpp/convert_hf_to_gguf.py"
     if os.path.exists(convert_script):
         print("✅ llama.cpp convert script found")
         return convert_script
 
-    # Try to find in common locations
-    common_paths = [
-        "/opt/llama.cpp/convert_hf_to_gguf.py",
-        "./llama.cpp/convert_hf_to_gguf.py",
-        "~/llama.cpp/convert_hf_to_gguf.py"
-    ]
+    # Check for alternative Python conversion
+    try:
+        import llama_cpp.convert
+        print("✅ llama-cpp-python convert module found")
+        return "python_convert"
+    except ImportError:
+        pass
 
-    for path in common_paths:
-        expanded_path = os.path.expanduser(path)
-        if os.path.exists(expanded_path):
-            print(f"✅ llama.cpp convert script found at {expanded_path}")
-            return expanded_path
-
-    print("❌ llama.cpp convert script not found")
-    print("\n📦 To install llama.cpp:")
-    print("  git clone https://github.com/ggerganov/llama.cpp")
-    print("  cd llama.cpp && make")
-    print("  # Or for Python conversion:")
-    print("  pip install llama-cpp-python[convert]")
+    print("❌ No conversion tools found")
+    print("\n📦 Install with:")
+    print("  bash setup_gguf.sh")
     return False
 
 def convert_to_gguf(model_path, output_path):
@@ -53,13 +45,13 @@ def convert_to_gguf(model_path, output_path):
 
     try:
         # Method 1: Use llama.cpp convert script (most efficient)
-        convert_script = check_requirements()
-        if convert_script:
+        convert_tool = check_requirements()
+        if convert_tool and convert_tool != "python_convert" and convert_tool.endswith("convert_hf_to_gguf.py"):
+            # Use llama.cpp convert script with correct arguments
             cmd = [
-                sys.executable, convert_script,
-                "--model", model_path,
-                "--output", output_path,
-                "--quantize", "Q4_K_M"  # Use same quantization as before
+                sys.executable, convert_tool,
+                model_path,  # Input model path
+                output_path   # Output GGUF path
             ]
 
             print(f"Running: {' '.join(cmd)}")
@@ -67,7 +59,36 @@ def convert_to_gguf(model_path, output_path):
 
             if result.returncode == 0:
                 print("✅ GGUF conversion successful!")
-                return True
+
+                # Now quantize to Q4_K_M using llama.cpp quantize tool
+                quantize_path = "./llama.cpp/build/bin/quantize"  # CMake build location
+                if not os.path.exists(quantize_path):
+                    quantize_path = "./llama.cpp/quantize"  # Fallback
+
+                if os.path.exists(quantize_path):
+                    quantized_output = output_path.replace(".gguf", "-Q4_K_M.gguf")
+                    quantize_cmd = [
+                        quantize_path,
+                        output_path,
+                        quantized_output,
+                        "Q4_K_M"
+                    ]
+
+                    print(f"Quantizing: {' '.join(quantize_cmd)}")
+                    quantize_result = subprocess.run(quantize_cmd, capture_output=True, text=True)
+
+                    if quantize_result.returncode == 0:
+                        print("✅ Quantization successful!")
+                        # Replace original file with quantized version
+                        os.rename(quantized_output, output_path)
+                        return True
+                    else:
+                        print(f"⚠️  Conversion successful but quantization failed: {quantize_result.stderr}")
+                        return True  # Still return True since conversion worked
+                else:
+                    print("⚠️  Conversion successful but quantize tool not found")
+                    print("💡 You can quantize later with: ./llama.cpp/build/bin/quantize")
+                    return True
             else:
                 print(f"❌ Conversion failed: {result.stderr}")
                 return False
