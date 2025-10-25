@@ -39,6 +39,10 @@ if [ ! -d "llama.cpp" ]; then
     git clone https://github.com/ggerganov/llama.cpp
     cd llama.cpp
 
+    # Install curl development libraries first
+    echo "📦 Installing curl development libraries..."
+    apt-get update && apt-get install -y libcurl4-openssl-dev
+
     # Use CMake instead of make (new build system)
     mkdir build && cd build
     cmake .. -DLLAMA_CURL=ON
