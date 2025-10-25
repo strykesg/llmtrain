@@ -49,11 +49,13 @@ def setup_environment():
     # Login to HuggingFace
     hf_token = os.getenv('HF_TOKEN')
     if hf_token:
+        print(f"🔑 HF_TOKEN found (length: {len(hf_token)})")
         from huggingface_hub import login
         login(token=hf_token)
         print("✅ HuggingFace login successful")
     else:
         print("⚠️  HuggingFace token not found - may have download limits")
+        print("💡 Make sure .env file exists with HF_TOKEN=your_token_here")
 
 def load_training_data():
     """Load training datasets."""
@@ -72,12 +74,15 @@ def setup_model():
     model_name = "OpenPipe/Qwen3-14B-Instruct"
 
     # Load model with Unsloth
+    hf_token = os.getenv('HF_TOKEN')
+    print(f"🤖 Loading model with token: {'Present' if hf_token else 'None'}")
+
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_name,
         max_seq_length=2048,  # Adjust based on your data
         dtype=None,  # Auto-detect
         load_in_4bit=True,  # Use 4-bit quantization for memory efficiency
-        token=os.getenv('HF_TOKEN')
+        token=hf_token
     )
 
     # Setup chat template
